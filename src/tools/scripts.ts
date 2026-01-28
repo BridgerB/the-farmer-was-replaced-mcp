@@ -1,16 +1,16 @@
 import { readFile, writeFile, readdir } from "fs/promises";
 import { join } from "path";
-import { PATHS } from "../utils/paths.ts";
+import { getScriptsPath } from "../utils/paths.ts";
 
 const ensurePy = (f: string) => (f.endsWith(".py") ? f : f + ".py");
 
 const isInvalidPath = (f: string) =>
   f.includes("..") || f.includes("/") || f.includes("\\");
 
-export const scriptRead = async (filename: string) => {
+export const scriptRead = async (filename: string, save?: string) => {
   try {
     const content = await readFile(
-      join(PATHS.scripts, ensurePy(filename)),
+      join(getScriptsPath(save), ensurePy(filename)),
       "utf-8",
     );
     return { content };
@@ -22,11 +22,15 @@ export const scriptRead = async (filename: string) => {
   }
 };
 
-export const scriptWrite = async (filename: string, content: string) => {
+export const scriptWrite = async (
+  filename: string,
+  content: string,
+  save?: string,
+) => {
   const name = ensurePy(filename);
   if (isInvalidPath(name)) return { success: false, error: "Invalid filename" };
   try {
-    await writeFile(join(PATHS.scripts, name), content, "utf-8");
+    await writeFile(join(getScriptsPath(save), name), content, "utf-8");
     return { success: true };
   } catch (error) {
     return {
@@ -36,9 +40,9 @@ export const scriptWrite = async (filename: string, content: string) => {
   }
 };
 
-export const scriptList = async () => {
+export const scriptList = async (save?: string) => {
   try {
-    const files = await readdir(PATHS.scripts);
+    const files = await readdir(getScriptsPath(save));
     return {
       files: files.filter((f) => f.endsWith(".py") && !f.startsWith("__")),
     };

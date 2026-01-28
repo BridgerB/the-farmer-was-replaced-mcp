@@ -10,7 +10,7 @@ import {
 import { gameStart, gameStop, gameStatus } from "./tools/game.ts";
 import { outputRead, outputWatch, outputClear } from "./tools/output.ts";
 import { scriptRead, scriptWrite, scriptList } from "./tools/scripts.ts";
-import { saveRead, itemsGet } from "./tools/save.ts";
+import { saveRead, itemsGet, savesList } from "./tools/save.ts";
 
 const tool = (
   name: string,
@@ -22,6 +22,13 @@ const tool = (
   description,
   inputSchema: { type: "object", properties, required },
 });
+
+const saveParam = {
+  save: {
+    type: "string",
+    description: 'Save folder name (e.g., "Save0", "neo"). Defaults to "Save0"',
+  },
+};
 
 const tools = [
   tool("game_start", "Start game script execution (sends F5 to game)"),
@@ -44,6 +51,7 @@ const tools = [
         type: "string",
         description: 'Script filename (e.g., "main" or "main.py")',
       },
+      ...saveParam,
     },
     ["filename"],
   ),
@@ -56,12 +64,14 @@ const tools = [
         description: 'Script filename (e.g., "main" or "main.py")',
       },
       content: { type: "string", description: "Full content of the script" },
+      ...saveParam,
     },
     ["filename", "content"],
   ),
-  tool("script_list", "List all Python script files"),
-  tool("save_read", "Read game save data (items and unlocks)"),
-  tool("items_get", "Get current item counts (hay, wood, carrot, etc.)"),
+  tool("script_list", "List all Python script files", saveParam),
+  tool("save_read", "Read game save data (items and unlocks)", saveParam),
+  tool("items_get", "Get current item counts (hay, wood, carrot, etc.)", saveParam),
+  tool("saves_list", "List all available save folders"),
 ];
 
 const handlers: Record<string, (args: any) => Promise<any>> = {
@@ -71,11 +81,12 @@ const handlers: Record<string, (args: any) => Promise<any>> = {
   output_read: (args) => outputRead(args?.lines),
   output_watch: outputWatch,
   output_clear: async () => outputClear(),
-  script_read: (args) => scriptRead(args.filename),
-  script_write: (args) => scriptWrite(args.filename, args.content),
-  script_list: scriptList,
-  save_read: saveRead,
-  items_get: itemsGet,
+  script_read: (args) => scriptRead(args.filename, args?.save),
+  script_write: (args) => scriptWrite(args.filename, args.content, args?.save),
+  script_list: (args) => scriptList(args?.save),
+  save_read: (args) => saveRead(args?.save),
+  items_get: (args) => itemsGet(args?.save),
+  saves_list: savesList,
 };
 
 const jsonResponse = (result: any) => ({
